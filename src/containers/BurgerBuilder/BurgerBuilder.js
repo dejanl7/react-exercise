@@ -39,11 +39,14 @@ class BurgerBuilder extends Component {
     componentDidMount() {
         axios.get('/orders/ingredients.json')
         .then( response => {
+            if (response && response.length > 0) {
+                this.setState({
+                    ingredients: response
+                })
+            }
             this.setState({
-                ingredients: response.data,
                 loading: false
             });
-        ;
         })
         .catch( error => {
             this.setState({
@@ -116,35 +119,17 @@ class BurgerBuilder extends Component {
 
     purchaseContinueHandler = () => {
         // alert('You continue!');
-        this.setState({loading: true});
+        const queryParams = [];
+        for (let i in this.state.ingredients) {
+            queryParams.push(encodeURIComponent(i) + '=' + encodeURIComponent(this.state.ingredients[i]))
+        }
+        
+        queryParams.push('price=' + this.state.totalPrice);
+        const queryString = queryParams.join('&');
 
-        const order = {
-            ingredients: this.state.ingredients,
-            price: this.state.totalPrice,
-            customer: {
-                name: 'User 1',
-                address: {
-                    street: 'Test street',
-                    zipcode: 21001,
-                    country: 'Serbia'
-                },
-                email: 'test@test.com'
-            },
-            deliveryMethos: 'fast'
-        };
-
-        axios.post('/orders.json', order)
-        .then( response => {        
-            this.setState({
-                loading: false,
-                purchasing: false
-            });
-        })
-        .catch( error => {    
-            this.setState({
-                loading: true,
-                purchasing: false
-            });
+        this.props.history.push({
+            pathname: '/checkout',
+            search: '?' + queryString
         });
     }
 
@@ -165,6 +150,8 @@ class BurgerBuilder extends Component {
             console.log('loading...')
             orderSummary = <Spinner />;
         }
+
+        console.log(this.state.ingredients, this.state.error, this.state.loading);
 
         if (this.state.ingredients && !this.state.error && !this.state.loading) {
             burger = (
